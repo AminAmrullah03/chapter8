@@ -19,24 +19,39 @@ app = Flask(__name__)
 def home():
     return render_template('index.html')
 
-@app.route("/mars", methods=["POST"])
-def web_mars_post():
-    # sample_receive = request.form['sample_give']
-    name_receive = request.form['name_give']
-    address_receive = request.form['address_give']
-    size_receive = request.form['size_give']
+@app.route("/bucket", methods=["POST"])
+def bucket_post():
+    bucket_receive = request.form['bucket_give']
+    count = db.bucket.count_documents({})
+    num = count + 1
     doc = {
-        'name': name_receive,
-        'address': address_receive,
-        'size': size_receive,
+        'num' : num,
+        'bucket' : bucket_receive,
+        'done' : 0
     }
-    db.orders.insert_one(doc)
-    return jsonify({'msg': 'complete!'})
+    db.bucket.insert_one(doc)
+    return jsonify({'msg': 'data saved!'})
 
-@app.route("/mars", methods=["GET"])
-def web_mars_get():
-    orders_list = list(db.orders.find({}, {'_id': False}))
-    return jsonify({'orders': orders_list})
+@app.route("/bucket/done", methods=["POST"])
+def bucket_done():
+    num_receive = request.form['num_give']
+    db.bucket.update_one(
+        {'num' : int(num_receive)},
+        {'$set' : {'done': 1}}
+    )
+    return jsonify({'msg': 'update done!'})
+
+@app.route("/bucket", methods=["GET"])
+def bucket_get():
+    buckets_list = list(db.bucket.find({}, {'_id': False}))
+    return jsonify({'buckets': buckets_list})
+
+@app.route("/bucket/delete", methods=["POST"])
+def bucket_delete():
+    num_receive = request.form['num_give']
+    db.bucket.delete_one({'num': int(num_receive)})
+    return jsonify({'msg': 'item deleted!'})
+
 
 if __name__ == '__main__':
     app.run('0.0.0.0', port=5000, debug=True)
